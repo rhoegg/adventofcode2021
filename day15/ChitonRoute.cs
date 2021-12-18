@@ -20,17 +20,22 @@ class ChitonRoute
             }
             riskLevelInput.Add(riskLevelRow);
         }
-        Console.WriteLine("Cavern is " + riskLevelInput[0].Count + "x" + riskLevelInput.Count);
+        Console.WriteLine("Cavern is " + riskLevelInput[0].Count * 5 + "x" + riskLevelInput.Count * 5);
 
-        riskLevels = new int[riskLevelInput.Count, riskLevelInput[0].Count];
+        riskLevels = new int[riskLevelInput.Count * 5, riskLevelInput[0].Count * 5];
 
         for (int y = 0; y < riskLevels.GetLength(0); y++)
         {
             for (int x = 0; x < riskLevels.GetLength(1); x++)
             {
-                riskLevels[y,x] = int.Parse(riskLevelInput[y][x]);
+                var baseRisk = int.Parse(riskLevelInput[y % riskLevelInput.Count][x % riskLevelInput.Count]);
+                var risk = baseRisk + x / riskLevelInput.Count + y / riskLevelInput[0].Count;
+                if (risk > 9) risk -= 9;
+                riskLevels[y,x] = risk;
+                Console.Write(risk + " ");
                 points.Add(new Point(x, y));
             }
+            Console.WriteLine();
         }
     }
 
@@ -42,7 +47,7 @@ class ChitonRoute
     public int LowestTotalRisk()
     {
         int result = Dijsktra();
-        Console.WriteLine("Result is " + result);
+        // Console.WriteLine("Result is " + result);
         return result;
     }
 
@@ -98,7 +103,7 @@ class ChitonRoute
     private int Dijsktra()
     {
         var distances = new PriorityQueue<RiskToPoint, int>();
-        var spt = new List<RiskToPoint>();
+        var spt = new Dictionary<Point, int>();
 
         // initialize distances to infinite
         foreach (var p in points)
@@ -115,22 +120,26 @@ class ChitonRoute
             // pick the minimum distance from the set of vertices not yet processed
                         
             var next = distances.Dequeue();
-            if (! spt.Any(rtp => rtp.Point == next.Point))
+            if (! spt.ContainsKey(next.Point))
             {
+                if (spt.Count % 1000 == 0) Console.WriteLine($"Computed {spt.Count}/{CaveSize}");
                 // mark the point as visited
-                Console.WriteLine($"Locking in {next.Point} at {next.Risk}");
-                spt.Add(next);
+                // Console.WriteLine($"Locking in {next.Point} at {next.Risk}");
+                spt[next.Point] = next.Risk;
                 // update the distance value of adjacents
                 foreach (var neighbor in Adjacents(next.Point).Where(neighbor => InBounds(neighbor)))
                 {
-                    var totalWeight = next.Risk + Risk(neighbor);
-                    distances.Enqueue(new RiskToPoint(neighbor, totalWeight), totalWeight);
-                    Console.WriteLine($" scoring {neighbor} at {totalWeight}");
+                    if (! spt.ContainsKey(neighbor))
+                    {
+                        var totalWeight = next.Risk + Risk(neighbor);
+                        distances.Enqueue(new RiskToPoint(neighbor, totalWeight), totalWeight);
+                        // Console.WriteLine($" scoring {neighbor} at {totalWeight}");
+                    }
                 }
             }
         }
 
-        return spt.Find(rtp => rtp.Point == End).Risk;
+        return spt[End];
     }
 
     class RiskToPoint {

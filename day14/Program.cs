@@ -1,17 +1,17 @@
 ﻿using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Day14
 {
-    // needs to give back character counts instead of the actual polymer for a pair and steps
-    class InefficientProgram
+    class Program
     {
         static void Main(string[] args)
         {
             Polymerization polymerization;
 
-            using (var reader = new StreamReader("example1.txt")) 
+            using (var reader = new StreamReader("input.txt")) 
             {
                 var polymerTemplate = reader.ReadLine();
                 Console.WriteLine("Polymer Template: " + polymerTemplate);
@@ -29,19 +29,15 @@ namespace Day14
                 reader.Close();
             }
 
-            string expanded = polymerization.Expand(10);
-            Dictionary<char, int> counts = new Dictionary<char, int>();
-            foreach (char c in expanded)
-            {
-                if (counts.ContainsKey(c))
-                {
-                    counts[c] += 1;
-                }
-                else
-                {
-                    counts[c] = 1;
-                }
-            }
+            var counts = polymerization.CountChars(40);
+            PrintCounts(counts);
+            var max = counts.Select(e => e.Value).Max();
+            var min = counts.Select(e => e.Value).Min();
+            Console.WriteLine("Puzzle 2: " +  (max - min));
+        }
+
+        public static void PrintCounts(Dictionary<string, long> counts)
+        {
             foreach (var entry in counts)
             {
                 Console.WriteLine(entry.Key + " " + entry.Value);
@@ -52,8 +48,8 @@ namespace Day14
     class Polymerization {
         readonly string polymerTemplate;
         Dictionary<string, string> insertions = new Dictionary<string, string>();
-        Dictionary<int, Dictionary<string, string>> cache = 
-            new Dictionary<int, Dictionary<string, string>>();
+        Dictionary<int, Dictionary<string, Dictionary<string, long>>> cache = 
+            new Dictionary<int, Dictionary<string, Dictionary<string, long>>>();
         
         public Polymerization(string template) 
         {
@@ -65,34 +61,18 @@ namespace Day14
             this.insertions[template] = insertion;
         }
         
-        public void Remember(string template, int step, string expanded)
+        public void Remember(string template, int step, Dictionary<string, long> counts)
         {
-            if (step <= 20) 
-            {
-                GetStepCache(step)[template] = expanded;
-                return;
-            } 
-            // store in file
-            File.WriteAllText("cache-" + template + "-" + step + ".txt", expanded);
+            GetStepCache(step)[template] = counts;
         }
 
-        public string GetCached(string template, int step)
+        public Dictionary<string, long> GetCached(string template, int step)
         {
-            if (step <= 20)
+            if (! GetStepCache(step).ContainsKey(template))
             {
-                if (! GetStepCache(step).ContainsKey(template))
-                {
-                    return null;
-                }
-                return GetStepCache(step)[template];
+                return null;
             }
-            // retrieve from file
-            string filename = "cache-" + template + "-" + step + ".txt";
-            if (File.Exists(filename))
-            {
-                return File.ReadAllText(filename);
-            }
-            return null;
+            return GetStepCache(step)[template];
         }
 
         public string Translate(string pair)
@@ -105,47 +85,81 @@ namespace Day14
             return pair[0] + insertion + pair[1];
         }
 
-        private Dictionary<string, string> GetStepCache(int step)
+        private Dictionary<string, Dictionary<string, long>> GetStepCache(int step)
         {
             if (! cache.ContainsKey(step))
             {
-                cache[step] = new Dictionary<string, string>();
+                cache[step] = new Dictionary<string, Dictionary<string, long>>();
             }
             return cache[step];
         }
 
-        public string Expand(int steps)
+        public Dictionary<string, long> CountChars(int steps)
         {
-            return this.Expand(polymerTemplate, steps);
+            return this.CountChars(polymerTemplate, steps);
         }
-        public string Expand(string template, int steps)
+        public Dictionary<string, long> CountChars(string template, int steps)
         {
             // first letter then expand each pair after
-            if (0 == steps) return template;
+            if (0 == steps) return CountChars(template);
 
-            string expanded = template[0].ToString();
             var pairs = new List<string>();
             for (int i = 1; i < template.Length; i++)
             {
                 pairs.Add(template.Substring(i - 1, 2));
             }
 
+            var counts = new Dictionary<string, long>();
             foreach (var pair in pairs)
             {
-                string expandedPair = null;
-                // int knownSteps = steps;
-                // while( knownSteps > 0 && expandedPair == null)
-                // {
-                //     expandedPair = GetCached(pair, knownSteps);
-                //     if (expandedPair == null) knownSteps--;
-                // }
-                // now we just have steps - knownSteps left
-                expandedPair = Expand(Translate(pair), steps - 1);
-                Remember(pair, steps, expandedPair);
+                var pairCounts = GetCached(pair, steps);
+                if (null == pairCounts)
+                {
+                    pairCounts = CountChars(Translate(pair), steps - 1);
+                    Remember(pair, steps, pairCounts);
+                    // Console.WriteLine("** " + steps + " " + pair);
+                    // Program.PrintCounts(pairCounts);
+                }
                     
-                expanded += expandedPair.Substring(1);
+                counts = SumCounts(counts, pairCounts);
+                counts[pair[1].ToString()] -= 1; // don't count the last character because it's the first character of the next
             }
-            return expanded;
+            counts[template[template.Length-1].ToString()] += 1; // put the very last back in
+            return counts;
+        }
+
+        private Dictionary<string, long> CountChars(string input)
+        {
+            var counts = new Dictionary<string, long>();
+            foreach(var c in input)
+            {
+                if (counts.ContainsKey(c.ToString()))
+                {
+                    counts[c.ToString()] += 1;
+                }
+                else
+                {
+                    counts[c.ToString()] = 1;
+                }
+            }
+            return counts;
+        }
+
+        private Dictionary<string, long> SumCounts(Dictionary<string, long> d1, Dictionary<string, long> d2)
+        {
+            foreach (var count in d2)
+            {
+                if (d1.ContainsKey(count.Key))
+                {
+                    d1[count.Key] += count.Value;
+                }
+                else
+                {
+                    d1[count.Key] = count.Value;
+                }
+            }
+
+            return d1;
         }
     }
 }
