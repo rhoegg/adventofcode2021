@@ -1,0 +1,252 @@
+inp w
+mul x 0
+add x z
+mod x 26    # x = z % 26
+div z 1
+add x 14    # x = 14
+eql x w     # x = 0
+eql x 0     # x = 1
+mul y 0
+add y 25
+mul y x
+add y 1     # y = 25x + 1
+mul z y     # z = 0
+mul y 0
+add y w     # y = w
+add y 7     # y = w + 7
+mul y x     # still 7
+add z y     # z = w + 7
+inp w
+mul x 0
+add x z
+mod x 26    # x = z % 26
+div z 1
+add x 12    # x = z + 12
+eql x w     # w == x (always false)
+eql x 0     # x = 1
+mul y 0
+add y 25
+mul y x
+add y 1     # y = 26
+mul z y     # z (which is w1 + 7) = 26z
+mul y 0
+add y w
+add y 4     # y = w2 + 4
+mul y x
+add z y     # z is now w1+7 (letter1) and w2+4 (letter2) (base 26)
+inp w
+mul x 0
+add x z
+mod x 26
+div z 1
+add x 11    # w2 + 4 + 11
+eql x w     # since w has to be 9 or less, always 0
+eql x 0     # x = 1
+mul y 0
+add y 25
+mul y x
+add y 1
+mul z y     # z = 26z
+mul y 0
+add y w
+add y 8
+mul y x     # y = w3 + 8
+add z y     # z is now w1+7 (letter1) and w2+4 (letter2) and w3+8 (letter3) (base 26)
+inp w
+mul x 0
+add x z
+mod x 26    # x = w3 + 8
+div z 26    # z is now just letters 1 and 2
+add x -4    # x = w3 + 4  -- this is going to be possible
+eql x w     # w4 == w3 + 4
+eql x 0     # w4 != w3 + 4                        *************************************
+mul y 0
+add y 25
+mul y x
+add y 1
+mul z y     # so if w4 == w3 + 4, z gets multiplied by 26, otherwise by 1
+mul y 0
+add y w
+add y 1     # y = w4 + 1
+mul y x     # y = 0 if w4 != w3 + 4
+add z y     # so if w4 == w3 + 4, z gets w4 + 1 added to it. If not, no
+inp w
+mul x 0
+add x z
+mod x 26
+div z 1
+add x 10    # x = last letter + 10 (letter2 if we're good)
+eql x w
+eql x 0     # w5 != w2 + 10 -- impossible anyway
+mul y 0
+add y 25
+mul y x
+add y 1
+mul z y     # appending
+mul y 0
+add y w
+add y 5
+mul y x
+add z y     # append w5 + 5 (3rd letter if we're good)
+inp w
+mul x 0
+add x z
+mod x 26
+div z 1
+add x 10    # w5 + 5 + 10 -- again impossible
+eql x w
+eql x 0
+mul y 0
+add y 25
+mul y x
+add y 1
+mul z y
+mul y 0
+add y w
+add y 14
+mul y x
+add z y     # append w6 + 14 (letter4 I think)
+inp w
+mul x 0
+add x z
+mod x 26
+div z 1
+add x 15
+eql x w
+eql x 0
+mul y 0
+add y 25
+mul y x
+add y 1
+mul z y
+mul y 0
+add y w
+add y 12
+mul y x
+add z y     # append w7 + 12 (letter5)
+inp w
+mul x 0
+add x z
+mod x 26
+div z 26    # pop x (w7 + 12)
+add x -9
+eql x w
+eql x 0     # w8 != w7 + 3             *************************
+mul y 0
+add y 25
+mul y x
+add y 1
+mul z y     # z * 26 only if rule broken
+mul y 0
+add y w
+add y 10
+mul y x
+add z y    # adds w8 + 10 if rule broken
+inp w       # last letter is w6 + 14
+mul x 0
+add x z
+mod x 26
+div z 26
+add x -9    # pop last letter w6 + 14 - 9
+eql x w
+eql x 0     # w9 != w6 + 5                  ********************************
+mul y 0
+add y 25
+mul y x
+add y 1
+mul z y
+mul y 0
+add y w
+add y 5
+mul y x
+add z y
+inp w       # w5 + 5 last letter
+mul x 0
+add x z
+mod x 26
+div z 1
+add x 12
+eql x w
+eql x 0
+mul y 0
+add y 25
+mul y x
+add y 1
+mul z y     # push
+mul y 0
+add y w
+add y 7     # w + 7
+mul y x
+add z y     # last letter now w10 + 7
+inp w
+mul x 0
+add x z
+mod x 26
+div z 26    # pop w10 + 7
+add x -15
+eql x w
+eql x 0     # w11 != w10 - 8
+mul y 0
+add y 25
+mul y x
+add y 1
+mul z y
+mul y 0
+add y w
+add y 6
+mul y x
+add z y
+inp w       # last letter again w5 + 5
+mul x 0
+add x z
+mod x 26
+div z 26    # pop w5 + 5
+add x -7
+eql x w
+eql x 0     # w12 != w5 - 2
+mul y 0
+add y 25
+mul y x
+add y 1
+mul z y
+mul y 0
+add y w
+add y 8
+mul y x
+add z y
+inp w       # last letter w2 + 4
+mul x 0
+add x z
+mod x 26
+div z 26    # pop w2 + 4
+add x -10
+eql x w
+eql x 0     # w13 != w2 - 6
+mul y 0
+add y 25
+mul y x
+add y 1
+mul z y
+mul y 0
+add y w
+add y 4
+mul y x
+add z y
+inp w       # letter 1 is w1 + 7
+mul x 0
+add x z
+mod x 26
+div z 26    # pop w1 + 7
+add x 0
+eql x w     # w14 != w1 + 7
+eql x 0
+mul y 0
+add y 25
+mul y x
+add y 1
+mul z y
+mul y 0
+add y w
+add y 6
+mul y x
+add z y
